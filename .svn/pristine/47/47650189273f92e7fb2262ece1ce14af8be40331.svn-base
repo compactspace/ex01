@@ -1,0 +1,333 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="kr.happyjob.study.managehire.dao.ManagehireDao">
+
+<!-- 
+AS-IS
+Original SQL mapping code
+-->
+	<select id="managehireList" resultType="kr.happyjob.study.managepost.model.ManagepostModel">
+		SELECT
+			posting_id as postIdx
+			, biz_idx as bizIdx
+			, title
+			, exp_req as expRequired
+			, exp_years as expYears
+			, salary as salary
+			, work_loc as workLocation
+			, openings as openings
+			, pos_desc as posDescription
+			, duties as duties
+			, req_qual as reqQualifications
+			, pref_qual as prefQualifications
+			, benefits
+			, app_status as AppStatus
+			, post_date as postDate
+			, end_date as endDate
+			, hiring_proc as hirProcess
+			, file_name as fileName
+			, phsycal_path as phsycalPath
+			, logical_path as logicalPath
+			, file_size as fileSize
+			, file_ext as fileExt
+		FROM
+			tb_hiring_post 
+		WHERE
+			biz_idx=#{bizIdx}
+		ORDER BY posting_id DESC
+			LIMIT #{startSeq}, #{pageSize} 
+	</select>
+	<select id="managehireCount" resultType="int">
+		SELECT
+			count(*)
+		FROM
+			tb_hiring_post 
+		WHERE
+			biz_idx=#{bizIdx}
+	</select>
+
+
+	<!--채용담당자가 공고를 등록하는 메퍼 -->
+	<insert id="managehireSave">
+		<selectKey resultType="int" keyProperty="seq" order="BEFORE">
+			select ifnull(max(posting_id),0)+1 from tb_hiring_post
+		</selectKey>
+		INSERT INTO tb_hiring_post
+		(
+			  posting_id
+			, biz_idx
+			, title
+			, exp_req
+			, exp_years
+			, salary
+			, work_loc
+			, openings
+			, pos_desc
+			, duties
+			, req_qual
+			, pref_qual
+			, benefits
+			, post_date
+			, end_date
+			, hiring_proc
+			, app_status
+			<if test="'Y'.toString() eq fileYn">
+			, file_name  
+			, phsycal_path 
+			, logical_path 
+			, file_size  
+			, file_ext
+			</if>
+			
+		)values(
+				#{seq}
+			  , #{bizIdx}
+			  , #{title}
+			  , #{expRequired}
+			  , #{expYears}
+		  	  , #{salary}
+			  , #{workLocation}
+			  , #{openings}
+			  , #{posDescription}
+			  , #{duties}
+			  , #{reqQualifications}
+			  , #{prefQualifications}
+			  , #{benefits}
+			  , now()
+			  , #{endDate}
+			  , #{hirProcess}
+			  , "대기중"
+			  <if test="'Y'.toString() eq fileYn">
+				, #{fileInfo.file_nm}
+				, #{fileInfo.file_loc}
+				, #{fileInfo.vrfile_loc}
+				, #{fileInfo.file_size}
+				, #{fileInfo.fileExtension}
+			</if>
+		)
+	</insert>
+	
+	<!--채용담당자가 공고를 수정하는 메퍼 -->
+	<update id="managehireUpdate">
+		UPDATE 
+			tb_hiring_post
+		SET 
+			 biz_idx = #{bizIdx}
+			, title = #{title}
+			, exp_req = #{expRequired}
+			, exp_years = #{expYears}
+			, salary = #{salary}
+			, work_loc = #{workLocation}
+			, openings = #{openings}
+			, pos_desc = #{posDescription}
+			, duties = #{duties}
+			, req_qual = #{reqQualifications}
+			, pref_qual = #{prefQualifications}
+			, benefits = #{benefits}
+			, post_date = now()
+			, end_date = #{endDate}
+			, hiring_proc = #{hirProcess}
+			, app_status = "대기중"
+			<if test="'Y'.toString() eq fileYn">
+			, file_name   =  #{fileInfo.file_nm}
+			, phsycal_path =  #{fileInfo.file_loc}
+			, logical_path =  #{fileInfo.vrfile_loc}
+			, file_size  =  #{fileInfo.file_size}
+			, file_ext= #{fileInfo.fileExtension}
+			</if>
+			<if test="'N'.toString() eq fileYn">
+			, file_name   = ""
+			, phsycal_path =  ""
+			, logical_path =  ""
+			, file_size  =  0
+			, file_ext= ""
+			</if>
+		WHERE
+		 	biz_idx = #{bizIdx} AND posting_id = #{postIdx}
+	</update>
+	
+	<!--공고 detail  -->
+	<select id="managehireDetail" resultType="kr.happyjob.study.managepost.model.ManagepostModel">
+	SELECT
+			posting_id as postIdx
+			, biz_idx as bizIdx
+			, title
+			, exp_req as expRequired
+			, exp_years as expYears
+			, salary as salary
+			, work_loc as workLocation
+			, openings as openings
+			, pos_desc as posDescription
+			, duties as duties
+			, req_qual as reqQualifications
+			, pref_qual as prefQualifications
+			, benefits
+			, end_date as endDate
+			, hiring_proc as hirProcess
+			, file_name as fileName
+			, phsycal_path as phsycalPath
+			, logical_path as logicalPath
+			, file_size as fileSize
+			, file_ext as fileExt
+	FROM
+		tb_hiring_post 
+	WHERE
+		biz_idx = #{bizIdx} AND posting_id = #{postIdx}
+	
+	</select>
+	
+	<delete id="managehireDelete">
+	   	DELETE FROM 
+	   		tb_hiring_post
+		WHERE 
+			biz_idx = #{bizIdx} AND posting_id = #{postIdx};
+	</delete>
+	
+	<!-- 한공고를 삭제했을때 -->
+	<delete id="deleteAllScrap">
+		DELETE FROM tb_scrap
+		WHERE  posting_id = #{postIdx};
+	</delete>
+	<delete id="deleteAllApply">
+		DELETE
+		FROM
+			tb_apply
+		WHERE
+			 posting_id = #{postIdx};
+	</delete>
+	
+<!-- 
+TO-BE (2024-11)
+Transitioned SQL mapping code as of 2024-11
+-->
+
+	<select id="getHirePostListByLoginId" resultType="kr.happyjob.study.managepost.model.ManagepostModel">
+		SELECT
+				posting_id as postIdx
+				, biz_idx as bizIdx
+				, title
+				, exp_req as expRequired
+				, exp_years as expYears
+				, salary as salary
+				, work_loc as workLocation
+				, openings as openings
+				, pos_desc as posDescription
+				, duties as duties
+				, req_qual as reqQualifications
+				, pref_qual as prefQualifications
+				, benefits
+				, app_status as AppStatus
+				, post_date as postDate
+				, start_date as startDate
+				, end_date as endDate
+				, hiring_proc as hirProcess
+				, file_name as fileName
+				, phsycal_path as phsycalPath
+				, logical_path as logicalPath
+				, file_size as fileSize
+				, file_ext as fileExt
+			FROM
+				tb_hiring_post 
+			WHERE
+				biz_idx = (select biz_idx from tb_biz where login_id = #{loginId})
+	</select>
+	
+	<insert id="createHirePost">
+    <selectKey resultType="int" keyProperty="postIdx" order="BEFORE">
+        SELECT IFNULL(MAX(posting_id), 0) + 1 FROM tb_hiring_post
+    </selectKey>
+    INSERT INTO tb_hiring_post (
+        posting_id,
+        biz_idx,
+        title,
+        exp_req,
+        exp_years,
+        salary,
+        work_loc,
+        openings,
+        pos_desc,
+        duties,
+        req_qual,
+        pref_qual,
+        benefits,
+        post_date,
+        start_date,
+        end_date,
+        hiring_proc,
+        app_status
+		<if test="'Y'.toString() eq fileYn">
+            , file_name
+            , phsycal_path
+            , logical_path
+            , file_size
+            , file_ext
+        </if>
+    )
+    VALUES (
+        #{postIdx},
+        #{bizIdx},
+        #{title},
+        #{expRequired},
+        #{expYears},
+        #{salary},
+        #{workLocation},
+        #{openings},
+        #{posDescription},
+        #{duties},
+        #{reqQualifications},
+        #{prefQualifications},
+        #{benefits},
+        NOW(),
+        #{startDate},
+        #{endDate},
+        #{hirProcess},
+        #{appStatus}
+		<if test="'Y'.toString() eq fileYn">
+			, #{fileInfo.file_nm}
+			, #{fileInfo.file_loc}
+			, #{fileInfo.vrfile_loc}
+			, #{fileInfo.file_size}
+			, #{fileInfo.fileExtension}
+        </if>
+    )
+</insert>
+
+   <!-- userId로 bizIdx 조회 -->
+    <select id="findBizIdxByLoginId" parameterType="String" resultType="Integer">
+        SELECT b.biz_idx
+        FROM tb_userinfo u
+        INNER JOIN tb_biz b
+        ON u.user_idx = b.user_idx
+        WHERE u.login_id = #{loginId}
+    </select>
+	
+	<update id="updateHirePost">
+    UPDATE tb_hiring_post
+    SET 
+        title = #{title},
+        exp_req = #{expRequired},
+        exp_years = #{expYears},
+        salary = #{salary},
+        work_loc = #{workLocation},
+        openings = #{openings},
+        pos_desc = #{posDescription},
+        duties = #{duties},
+        req_qual = #{reqQualifications},
+        pref_qual = #{prefQualifications},
+        benefits = #{benefits},
+        start_date = #{startDate},
+        end_date = #{endDate},
+        hiring_proc = #{hirProcess},
+        app_status = #{appStatus},
+        post_date = now() 
+		<if test="'Y'.toString() eq fileYn">
+			, file_name = #{fileInfo.file_nm}
+			, phsycal_path = #{fileInfo.file_loc}
+			, logical_path = #{fileInfo.vrfile_loc}
+			, file_size = #{fileInfo.file_size}
+			, file_ext = #{fileInfo.fileExtension}
+        </if>
+       
+    WHERE posting_id = #{postIdx}
+</update>
+</mapper>

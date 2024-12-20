@@ -1,0 +1,526 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="kr.happyjob.study.apply.dao.ResumeDao">
+
+    <!-- 이력서 목록 조회 쿼리. 사용자 ID와 이름, 타입에 따라 이력서 목록을 조회한다. -->
+    <select id="getResumeList" resultType="kr.happyjob.study.apply.model.ResumeModel">
+        SELECT
+              res_idx AS resIdx
+            , res_title AS resTitle
+            , updated_date AS updatedDate
+            , file_name AS fileName
+        FROM 
+            tb_resume
+        WHERE 
+            user_idx = (
+                SELECT 
+                    user_idx 
+                FROM 
+                    tb_userinfo
+                WHERE 
+                    login_id = #{loginId}
+                    AND name = #{userNm}
+                    AND user_type = #{userType}
+                    AND is_apply = 'F'
+                )
+    </select>
+
+    <!-- 이력서 생성 쿼리. 특정 사용자의 정보를 바탕으로 이력서를 생성한다. -->
+    <insert id="createResume" parameterType="map" useGeneratedKeys="true" keyProperty="resIdx">
+        INSERT INTO tb_resume
+        (
+            user_idx,
+            res_title,
+            updated_date
+        )
+        SELECT 
+            user.user_idx,
+            CONCAT(#{userNm}, '님의 이력서', ' (', NOW(),')'),
+            NOW()
+        FROM
+            tb_userinfo user
+        WHERE
+            user.login_id = #{loginId}
+            AND user.name = #{userNm}
+            AND user.user_type = #{userType};
+    </insert>
+    
+    <!-- 특정 이력서 정보 조회 쿼리. 이력서 ID(resIdx)를 기준으로 상세 정보를 조회한다. -->
+    <select id="getResumeInfo" resultType="kr.happyjob.study.apply.model.ResumeModel">
+        SELECT
+              tb_resume.res_idx AS resIdx
+            , tb_resume.emp_status AS empStatus
+            , tb_resume.res_title AS resTitle
+            , tb_resume.short_intro AS shortIntro
+            , tb_resume.pfo_link AS proLink
+            , tb_resume.per_statement AS perStatement
+            , tb_resume.updated_date AS updatedDate
+            , tb_resume.file_name AS fileName
+            , tb_resume.phsycal_path AS phsycalPath
+            , tb_resume.logical_path AS logicalPath
+            , tb_resume.file_size AS fileSize
+            , tb_resume.file_ext AS fileExt
+            , tb_userinfo.name AS userNm
+            , tb_userinfo.phone AS phone
+            , tb_userinfo.email AS email
+        FROM
+            tb_resume
+        JOIN
+            tb_userinfo
+        ON
+            tb_resume.user_idx = tb_userinfo.user_idx
+        WHERE
+            tb_resume.res_idx = #{resIdx}
+    </select>
+    
+    <!--
+        이력서 복사 쿼리. 이력서를 복사하여 새롭게 생성한다.
+        원본 데이터를 복사하며 파일 정보가 있는 경우 해당 파일 정보도 함께 복사한다.
+    -->
+    <insert id="copyResume" parameterType="kr.happyjob.study.apply.model.ResumeModel" useGeneratedKeys="true" keyProperty="resIdx">
+        INSERT INTO tb_resume 
+        (
+              user_idx
+            , emp_status
+            , res_title
+            , short_intro
+            , pfo_link
+            , per_statement
+            , is_apply
+            , file_name
+            , phsycal_path
+            , logical_path
+            , file_size
+            , file_ext
+        )
+        SELECT 
+              user_idx
+            , emp_status
+            , CONCAT('[복사] ', res_title)
+            , short_intro
+            , pfo_link
+            , per_statement
+            , 'F'
+            <if test="fileSize != 0">
+                , #{fileName}
+                , #{phsycalPath}
+                , #{logicalPath}
+                , #{fileSize}
+                , #{fileExt}
+            </if>
+            <if test="fileSize == 0 or fileSize == null">
+                , NULL
+                , NULL
+                , NULL
+                , 0
+                , NULL
+            </if>
+        FROM 
+            tb_resume
+        WHERE 
+            res_idx = #{resIdx};
+    </insert>
+    
+    <!--
+        이력서 복사 쿼리. 지원 완료된 이력서를 복사.
+        원본 데이터를 복사하며 파일 정보가 있는 경우 해당 파일 정보도 함께 복사한다.
+    -->
+    <insert id="copyResumeApplied" parameterType="kr.happyjob.study.apply.model.ResumeModel" useGeneratedKeys="true" keyProperty="resIdx">
+        INSERT INTO tb_resume 
+        (
+              user_idx
+            , emp_status
+            , res_title
+            , short_intro
+            , pfo_link
+            , per_statement
+            , is_apply
+            , file_name
+            , phsycal_path
+            , logical_path
+            , file_size
+            , file_ext
+        )
+        SELECT 
+              user_idx
+            , emp_status
+            , CONCAT('[복사] ', res_title)
+            , short_intro
+            , pfo_link
+            , per_statement
+            , 'T'
+            <if test="fileSize != 0">
+                , #{fileName}
+                , #{phsycalPath}
+                , #{logicalPath}
+                , #{fileSize}
+                , #{fileExt}
+            </if>
+            <if test="fileSize == 0 or fileSize == null">
+                , NULL
+                , NULL
+                , NULL
+                , 0
+                , NULL
+            </if>
+        FROM 
+            tb_resume
+        WHERE 
+            res_idx = #{resIdx};
+    </insert>
+    
+    <!-- 이력서 관련 데이터(경력, 학력, 스킬, 자격증) 복사 쿼리. 새로운 이력서 ID를 사용하여 데이터 복사. -->
+    <insert id="copyCareer">
+        INSERT INTO tb_career 
+        (
+              company
+            , dept
+            , position
+            , start_date
+            , end_date
+            , reason
+            , crr_desc
+            , res_idx
+        )
+        SELECT 
+              company
+            , dept
+            , position
+            , start_date
+            , end_date
+            , reason
+            , crr_desc
+            , #{newResIdx}
+        FROM 
+            tb_career
+        WHERE 
+            res_idx = #{oldResIdx};
+    </insert>
+
+    <!-- 학력 정보 복사 쿼리 -->
+    <insert id="copyEdu">
+        INSERT INTO tb_education 
+        (
+              res_idx
+            , edu_level
+            , school_name
+            , major
+            , adm_date
+            , grd_date
+            , grd_status
+        )
+        SELECT 
+              #{newResIdx}
+            , edu_level
+            , school_name
+            , major
+            , adm_date
+            , grd_date
+            , grd_status
+        FROM 
+            tb_education
+        WHERE 
+            res_idx = #{oldResIdx};
+    </insert>
+    
+    <!-- 스킬 정보 복사 쿼리 -->
+    <insert id="copySkill">
+        INSERT INTO tb_skill 
+        (
+              skill_name
+            , skill_detail
+            , res_idx
+        )
+        SELECT 
+              skill_name
+            , skill_detail
+            , #{newResIdx}
+        FROM 
+            tb_skill
+        WHERE 
+            res_idx = #{oldResIdx};
+    </insert>
+    
+    <!-- 자격증 정보 복사 쿼리 -->
+    <insert id="copyCert">
+        INSERT INTO tb_certification
+        (
+              cert_name
+            , grade
+            , issuer
+            , acq_date
+            , res_idx
+        )
+        SELECT
+              cert_name
+            , grade
+            , issuer
+            , acq_date
+            , #{newResIdx}
+        FROM
+            tb_certification
+        WHERE
+            res_idx = #{oldResIdx}
+    </insert>
+    
+    <!--
+        이력서 삭제 쿼리. 이력서와 연결된 자식 데이터부터 순차적으로 삭제.
+        자격증, 스킬, 학력, 경력 데이터를 삭제한 후 최종적으로 이력서 데이터를 삭제한다.
+    -->
+    <delete id="deleteAllCert">
+        DELETE FROM tb_certification WHERE res_idx = #{resIdx};
+    </delete>
+
+    <delete id="deleteAllSkill">
+        DELETE FROM tb_skill WHERE res_idx = #{resIdx};
+    </delete>
+
+    <delete id="deleteAllEdu">
+        DELETE FROM tb_education WHERE res_idx = #{resIdx};
+    </delete>
+
+    <delete id="deleteAllCareer">
+        DELETE FROM tb_career WHERE res_idx = #{resIdx};
+    </delete>
+
+    <delete id="deleteResumeByResIdx">
+        DELETE FROM tb_resume WHERE res_idx = #{resIdx};
+    </delete>
+    
+    <!-- 경력 목록 조회 쿼리. 특정 이력서 ID(resIdx)를 기준으로 경력 정보를 조회. -->
+    <select id="getCrrList" resultType="kr.happyjob.study.apply.model.CareerModel">
+        SELECT
+              crr_idx AS crrIdx 
+            , company
+            , dept
+            , position
+            , start_date AS startDate
+            , end_date AS endDate
+            , reason
+            , crr_desc AS crrDesc
+        FROM
+            tb_career
+        WHERE
+            res_idx = #{resIdx}
+    </select>
+    
+    <!-- 학력 목록 조회 쿼리. 특정 이력서 ID(resIdx)를 기준으로 학력 정보를 조회. -->
+    <select id="getEduList" resultType="kr.happyjob.study.apply.model.EducationModel">
+        SELECT 
+              edu_idx AS eduIdx
+            , edu_level AS eduLevel
+            , school_name AS schoolName
+            , major AS major
+            , adm_date AS admDate
+            , grd_date AS grdDate
+            , grd_status AS grdStatus
+        FROM
+            tb_education
+        WHERE
+            res_idx = #{resIdx}
+    </select>
+    
+    <!-- 스킬 목록 조회 쿼리. 특정 이력서 ID(resIdx)를 기준으로 스킬 정보를 조회. -->
+    <select id="getSkillList" resultType="kr.happyjob.study.apply.model.SkillModel">
+        SELECT 
+              skill_idx AS skillIdx
+            , skill_name AS skillName
+            , skill_detail AS skillDetail
+        FROM
+            tb_skill
+        WHERE
+            res_idx = #{resIdx}
+    </select>
+    
+    <!-- 자격증 목록 조회 쿼리. 특정 이력서 ID(resIdx)를 기준으로 자격증 정보를 조회. -->
+    <select id="getCertList" resultType="kr.happyjob.study.apply.model.CertificationModel">
+        SELECT 
+              cert_idx AS certIdx
+            , cert_name AS certName
+            , grade AS grade
+            , issuer AS issuer
+            , acq_date AS acqDate
+        FROM
+            tb_certification
+        WHERE
+            res_idx = #{resIdx}
+    </select>
+    
+    <!-- 경력 정보 삽입 쿼리. 새로운 경력 정보를 이력서에 추가. -->
+    <insert id="insertCareer">
+        INSERT INTO tb_career
+        (
+              company
+            , dept
+            , position
+            , start_date
+            , end_date
+            , reason
+            , crr_desc
+            , res_idx
+        ) VALUES (
+              #{company}
+            , #{dept}
+            , #{position}
+            , #{startDate}
+            , #{endDate}    
+            , #{reason}    
+            , #{crrDesc}    
+            , #{resIdx}    
+        )
+    </insert>
+
+    <!-- 학력 정보 삽입 쿼리 -->
+    <insert id="insertEdu">
+        INSERT INTO tb_education
+        (
+              res_idx
+            , edu_level
+            , school_name
+            , major
+            , adm_date
+            , grd_date
+            , grd_status
+        ) VALUES (
+              #{resIdx}
+            , #{eduLevel}
+            , #{schoolName}
+            , #{major}
+            , #{admDate}    
+            , #{grdDate}    
+            , #{grdStatus}    
+        )
+    </insert>
+
+    <!-- 스킬 정보 삽입 쿼리 -->
+    <insert id="insertSkill">
+        INSERT INTO tb_skill
+        (
+              skill_name
+            , skill_detail
+            , res_idx
+        ) VALUES (
+              #{skillName}
+            , #{skillDetail}
+            , #{resIdx}    
+        )
+    </insert>
+
+    <!-- 자격증 정보 삽입 쿼리 -->
+    <insert id="insertCert">
+        INSERT INTO tb_certification
+        (
+              cert_name
+            , grade
+            , issuer
+            , acq_date
+            , res_idx
+        ) VALUES (
+              #{certName}
+            , #{grade}
+            , #{issuer}
+            , #{acqDate}
+            , #{resIdx}
+        )
+    </insert>
+    
+    <!-- 특정 경력 정보 삭제 쿼리. 특정 이력서의 경력 정보를 삭제. -->
+    <delete id="deleteOneCareer">
+        DELETE 
+        FROM 
+            tb_career
+        WHERE
+            res_idx = #{resIdx}
+        AND 
+            crr_idx = #{crrIdx} 
+    </delete>
+
+    <!-- 특정 학력 정보 삭제 쿼리 -->
+    <delete id="deleteOneEdu">
+        DELETE 
+        FROM 
+            tb_education
+        WHERE
+            res_idx = #{resIdx}
+        AND 
+            edu_idx = #{eduIdx} 
+    </delete>
+
+    <!-- 특정 스킬 정보 삭제 쿼리 -->
+    <delete id="deleteOneSkill">
+        DELETE 
+        FROM 
+            tb_skill
+        WHERE
+            res_idx = #{resIdx}
+        AND 
+            skill_idx = #{skillIdx} 
+    </delete>
+
+    <!-- 특정 자격증 정보 삭제 쿼리 -->
+    <delete id="deleteOneCert">
+        DELETE 
+        FROM 
+            tb_certification
+        WHERE
+            res_idx = #{resIdx}
+        AND 
+            cert_idx = #{certIdx} 
+    </delete>
+    
+    <!-- 이력서 정보 업데이트 쿼리. 필요시 파일 정보도 업데이트. -->
+    <update id="updateResume">
+        UPDATE 
+            tb_resume 
+        SET
+              res_title = #{res_title}
+            , short_intro = #{short_intro}
+            , pfo_link = #{pfo_link}
+            , per_statement = #{per_statement}
+            , updated_date = now()
+            <if test="'Y'.toString() eq fileYn">
+                , file_name = #{fileInfo.file_nm}
+                , phsycal_path = #{fileInfo.file_loc}
+                , logical_path = #{fileInfo.vrfile_loc}
+                , file_size = #{fileInfo.file_size}
+                , file_ext = #{fileInfo.fileExtension}
+            </if>
+        WHERE 
+            res_idx = #{resIdx}
+        AND
+            user_idx = (
+                SELECT 
+                    user_idx 
+                FROM 
+                    tb_userinfo
+                WHERE 
+                    login_id = #{loginId}
+                    AND name = #{userNm}
+                    AND user_type = #{userType}
+                )
+    </update>
+    
+    <!-- 이력서 첨부 파일 정보 삭제 쿼리. 파일 정보를 빈 값으로 업데이트. -->
+    <update id="deleteAttach">
+        UPDATE
+            tb_resume
+        SET
+              file_name = ''
+            , phsycal_path = ''
+            , logical_path = ''
+            , file_size = '0'
+            , file_ext = ''
+        WHERE
+            res_idx = #{resIdx}
+    </update>
+    
+    <select id="findResIdxByAppId" resultType="int">
+    	SELECT
+    		res_idx AS resIdx
+   		FROM
+   			tb_apply
+		WHERE
+			app_id = #{appId}
+    </select>
+    
+</mapper>

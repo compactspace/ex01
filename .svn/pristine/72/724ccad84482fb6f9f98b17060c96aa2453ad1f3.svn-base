@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="kr.happyjob.study.jobs.dao.ApplyDao">
+
+<select id="selectApplyExist" resultType="kr.happyjob.study.jobs.model.ApplyModel">
+   SELECT
+        app_id as applyIdx
+   FROM
+       tb_apply
+   WHERE
+       user_idx = #{userIdx}
+   AND
+       posting_id = #{postIdx}
+   AND
+       login_id = #{loginIdx}
+
+
+</select>
+<insert id="saveApply">
+<selectKey resultType="int" keyProperty="seq" order="BEFORE">
+			SELECT IFNULL(max(app_id), 0) + 1 FROM tb_apply
+		</selectKey>
+		INSERT INTO tb_apply
+		(
+			  app_id
+			, user_idx  
+			, posting_id
+			, login_id
+			, apply_date
+			, viewed
+			, res_idx
+			, status
+		) values (
+			  #{seq}
+			, #{userIdx}  
+			, #{postIdx}
+			, #{loginIdx}
+			, now()
+			, 0
+			, #{resumeIdx}
+			, '지원완료'
+		)
+</insert>
+
+<select id="ApplyBizPostDetail" resultType="kr.happyjob.study.jobs.model.ApplyModel">
+		SELECT 
+              b.biz_name as bizName
+            , p.title as postTitle         
+        FROM 
+             tb_biz b
+        INNER JOIN 
+               tb_hiring_post p ON b.biz_idx = p.biz_idx
+        WHERE 
+             b.biz_idx = #{bizIdx}
+         AND 
+             p.posting_id = #{postIdx};
+	</select>
+
+<select id="ApplyUserResumeDetail" resultType="kr.happyjob.study.jobs.model.ApplyModel">
+		SELECT
+		       u.user_idx as userIdx
+	        ,  u.phone as userPhone
+	        ,  u.email as userEmail
+	        ,  r.res_idx as resumeIdx
+	        ,  r.res_title as resumeTitle 
+		FROM 
+            tb_userinfo u
+        INNER JOIN
+            tb_resume r ON r.user_idx = u.user_idx
+		WHERE 
+    	    u.login_id = #{loginIdx}
+	</select>		
+
+	<select id="getUserIdxByLoginId" resultType="int" parameterType="string">
+	    SELECT user_idx FROM tb_userinfo WHERE login_id = #{loginIdx}
+	</select>
+	
+</mapper>

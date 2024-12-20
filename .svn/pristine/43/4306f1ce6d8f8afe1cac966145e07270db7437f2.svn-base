@@ -1,0 +1,131 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="kr.happyjob.study.managehire.dao.ApplicantDao">
+
+	<!--채용담당자 입사지원자들 관리 -->
+	<select id="applicantList" resultType="kr.happyjob.study.managepost.model.ApplicantModel">
+		SELECT
+			post.title AS title,
+			apply.status AS status,
+		    user.login_id AS loginId,
+		    user.name AS name,
+		    user.email AS email,
+		    user.phone AS phone,
+		    res.res_idx AS resIdx,
+		    res.res_title AS resTitle,
+		    apply.apply_date AS applyDate,
+		    apply.viewed AS viewed,
+		    apply.posting_id AS postIdx,
+		    apply.app_id AS appId,
+		    GROUP_CONCAT(DISTINCT crr.company) AS companies,
+		    MAX(edu.grd_status) AS grdStatus,
+		    MAX(edu.school_name) AS schoolName
+		FROM
+		    tb_apply AS apply
+		JOIN tb_userinfo AS user ON apply.login_id = user.login_id
+		JOIN tb_hiring_post AS post ON apply.posting_id = post.posting_id
+		JOIN tb_resume AS res ON apply.res_idx = res.res_idx
+		LEFT JOIN tb_education AS edu ON res.res_idx = edu.res_idx
+		LEFT JOIN tb_career AS crr ON res.res_idx = crr.res_idx
+		WHERE
+		    post.posting_id = #{postIdx}
+		    AND apply.status LIKE CONCAT("%", #{keyword}, "%")
+		GROUP BY
+		    user.name ,user.email, user.phone, apply.apply_date, res.res_title, apply.status
+		ORDER BY app_id DESC
+			LIMIT #{startSeq}, #{pageSize} 
+	</select>
+	<!--채용담당자 입사지원자 명수 -->
+	<select id="applicantCount" resultType="int">
+		SELECT
+			count(*)
+		FROM(
+		SELECT
+		    user.name AS name,
+		    user.email AS email,
+		    user.phone AS phone,
+		    res.res_title AS resTitle,
+		    apply.apply_date AS applyDate,
+		    GROUP_CONCAT(DISTINCT crr.company) AS companies,
+		    MAX(edu.grd_status) AS grdStatus,
+		    MAX(edu.school_name) AS schoolName
+		FROM
+		    tb_apply AS apply
+		JOIN tb_userinfo AS user ON apply.login_id = user.login_id
+		JOIN tb_hiring_post AS post ON apply.posting_id = post.posting_id
+		JOIN tb_resume AS res ON apply.res_idx = res.res_idx
+		LEFT JOIN tb_education AS edu ON res.res_idx = edu.res_idx
+		LEFT JOIN tb_career AS crr ON res.res_idx = crr.res_idx
+		WHERE
+		    post.posting_id = #{postIdx} 
+		    AND apply.status LIKE CONCAT("%", #{keyword}, "%")
+		GROUP BY
+		    user.name ,user.email, user.phone, apply.apply_date, res.res_title
+		) as T
+	</select>
+	<!-- 아직 처리안함 채용담당자의 채용절차 -->
+	<select id="hiringProcSerch" resultType="String">
+		SELECT
+			hiring_proc as hirProcess
+		FROM
+			tb_hiring_post
+		WHERE
+			posting_id = #{postIdx}
+	</select>
+	<update id="statusUpdate">
+		UPDATE 
+			tb_apply
+		SET 
+			status= #{keyword}
+		WHERE
+		 	posting_id = #{postIdx} 
+		<if test="loginId != null and loginId != ''">
+            AND login_id = #{loginId}
+        </if>
+	</update>
+	<update id="statusUpdateStart">
+		UPDATE 
+			tb_apply
+		SET 
+			status= "서류심사중"
+		WHERE
+		 	posting_id = #{postIdx} 
+		 AND
+		 	status= '지원완료'
+	</update>
+	<update id="statusUpdateStartRest">
+		UPDATE 
+			tb_apply
+		SET 
+			status= #{firstProc}
+		WHERE
+		 	posting_id = #{postIdx} 
+		 AND
+		 	status= '지원완료'
+	</update>
+	<update id="viewUpdate">
+		UPDATE 
+			tb_apply
+		SET 
+			viewed= 1
+		WHERE
+		 	posting_id = #{postIdx} 
+		 AND
+		 	login_id=#{loginId}
+	</update>
+	
+	<!--공고 detail id로 유효성검사 -->
+	<select id="managehireDetailBiz" resultType="kr.happyjob.study.managepost.model.ApplicantModel">
+	SELECT
+			posting_id as postIdx
+			, biz_idx as bizIdx
+			, title
+			, end_date as endDate 
+			,hiring_proc as hirProcess
+	FROM
+		tb_hiring_post 
+	WHERE
+		biz_idx = #{bizIdx}
+	
+	</select>
+</mapper>

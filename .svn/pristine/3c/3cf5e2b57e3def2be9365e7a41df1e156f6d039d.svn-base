@@ -1,0 +1,117 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="kr.happyjob.study.jobs.dao.ScrapDao">
+
+<select id="selectScrapExist" resultType="kr.happyjob.study.jobs.model.ScrapModel">
+     SELECT
+         posting_id as postIdx
+     FROM
+         tb_scrap
+     WHERE
+         login_id = #{loginIdx}    
+         AND posting_id = #{postIdx}    
+           
+</select>
+<insert id="saveScrap">
+<selectKey resultType="int" keyProperty="seq" order="BEFORE">
+			SELECT IFNULL(max(scrap_idx), 0) + 1 FROM tb_scrap
+		</selectKey>
+		INSERT INTO tb_scrap
+		(
+			  scrap_idx
+			, posting_id
+			, login_id
+			, user_idx
+			, scrap_date
+		) values (
+			  #{seq}
+			, #{postIdx}
+			, #{loginIdx}
+			, #{userIdx}
+			, now()
+		)
+</insert>
+<select id="scrapList" resultType="kr.happyjob.study.jobs.model.ScrapModel">
+    SELECT
+          s.scrap_idx as scrapIdx,
+          s.posting_id as postIdx,
+          s.scrap_date as scrappedDate,
+          p.biz_idx as postBizIdx,
+          p.title as postTitle,
+          p.work_loc as postWorkLocation,
+          p.exp_req as postExpRequired,
+          p.end_date as postEndDate,
+          p.app_status as postStatus,
+          b.biz_name as postBizName         
+    FROM
+        tb_scrap s
+    LEFT JOIN
+        tb_hiring_post p ON s.posting_id = p.posting_id
+    LEFT JOIN
+        tb_biz b ON p.biz_idx = b.biz_idx
+    <where> 
+        s.login_id = #{loginId}
+
+        <if test="(searchTitle != null) and (!''.equals(searchTitle))">
+            AND p.title LIKE CONCAT('%', #{searchTitle},'%')
+        </if>
+        <if test="(searchStDate != null) and (!''.equals(searchStDate))">
+            AND STR_TO_DATE(p.end_date, '%Y-%m-%d') <![CDATA[>=]]> STR_TO_DATE(#{searchStDate}, '%Y-%m-%d')
+        </if>
+        <if test="(searchEdDate != null) and (!''.equals(searchEdDate))">
+            AND STR_TO_DATE(p.end_date, '%Y-%m-%d') <![CDATA[<=]]> STR_TO_DATE(#{searchEdDate}, '%Y-%m-%d')
+        </if>
+    </where>
+    ORDER BY s.scrap_idx DESC
+    LIMIT #{startSeq}, #{pageSize}
+</select>
+
+
+
+
+<select id="scrapListCnt" resultType="int">
+    SELECT
+			count(*)
+		FROM.
+			tb_scrap s
+	    LEFT JOIN
+            tb_hiring_post p ON s.posting_id = p.posting_id  <!-- 공고 테이블과 조인 -->
+         <where>
+             s.login_id = #{loginId}
+        
+		    <if test="(searchTitle != null) and (!''.equals(searchTitle))">
+				AND p.title LIKE CONCAT('%', #{searchTitle},'%')
+			</if> 
+			<if test="(searchStDate != null) and (!''.equals(searchStDate))">
+				AND p.end_date <![CDATA[>=]]> STR_TO_DATE(#{searchStDate}, '%Y-%m-%d')
+			</if>
+			<if test="(searchEdDate != null) and (!''.equals(searchEdDate))">
+				AND p.end_date <![CDATA[<=]]> STR_TO_DATE(#{searchEdDate}, '%Y-%m-%d')
+			</if>
+		</where>
+</select>
+
+<delete id="deleteScrap"> 
+		DELETE FROM tb_scrap
+		WHERE scrap_idx = #{scrapIdx}
+	</delete>
+
+<delete id="deleteScrapList" parameterType="list">
+    DELETE FROM tb_scrap
+    WHERE scrap_idx IN
+    <foreach item="scrapIdx" collection="list" open="(" separator="," close=")">
+        #{scrapIdx}
+    </foreach>
+</delete>
+
+
+
+<update id="updateScrap">
+		UPDATE tb_scrap
+		SET
+			posting_id = NULL
+		WHERE posting_id = #{postIdx}
+</update>
+	
+	
+</mapper>

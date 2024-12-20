@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="kr.happyjob.study.jobs.dao.JobsDao">
+
+    <!-- scrap 확인 -->
+    <select id="isScraped" resultType="boolean">
+        SELECT CASE WHEN COUNT(*) > 0 THEN TRUE ELSE FALSE END
+        FROM tb_scrap
+        WHERE user_idx = #{userIdx}
+          AND posting_id = #{postIdx}
+    </select>
+
+    <!-- apply 확인 -->
+    <select id="isApplyed" resultType="boolean">
+        SELECT CASE WHEN COUNT(*) > 0 THEN TRUE ELSE FALSE END
+        FROM tb_apply
+        WHERE user_idx = #{userIdx}
+          AND posting_id = #{postIdx}
+    </select>
+
+</mapper>

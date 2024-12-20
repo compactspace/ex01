@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="kr.happyjob.study.mypage.dao.MypageDao">
+
+	<!-- 개인정보 불러오기 -->
+	<select id="getUserInfo" resultType="kr.happyjob.study.mypage.model.MypageModel">
+		SELECT
+		      login_id as loginId
+		    , user_type as userType
+		  	, name
+		  	, password
+		  	, sex
+		  	, birthday
+		  	, phone
+		  	, email
+		  	, zip_code as zipCode
+		  	, address
+		  	, detail_address as detailAddress
+	      FROM tb_userinfo
+	     WHERE login_id = #{loginId}
+	</select>
+	
+	<!-- 기업회원 기업등록 유무 -->
+	<select id="chkRegBiz" resultType="kr.happyjob.study.mypage.model.MypageModel">
+		SELECT COALESCE(MAX(biz_idx), 0) as bizIdx
+	  	  FROM tb_biz
+		 WHERE login_id = #{loginId}
+	</select>
+	
+	<!-- 개인정보 수정 -->	
+	<update id="updateUserInfo">
+		UPDATE tb_userinfo
+		SET 
+			name = #{name},
+			sex = #{sex},
+			birthday = #{birthday},
+			phone = #{phone},
+			email = #{email},
+			zip_code = #{zipCode},
+			address = #{address},
+			detail_address = #{detailAddress}
+		WHERE login_id = #{loginId}
+	</update>
+	
+	<!-- 비밀번호 수정 -->
+	<update id="updatePasswd">
+		<![CDATA[
+		UPDATE tb_userinfo
+		   SET password = #{newPasswd}
+		 WHERE login_id = #{loginId}
+		]]>
+	</update>
+	
+	<!-- 회원탈퇴(비활성화) -->
+	<update id="deleteUser">
+		UPDATE tb_userinfo
+		   SET status_yn = '2'
+		 WHERE login_Id = #{loginId}
+		   AND password = #{password}
+	</update>
+	
+	<!-- 회원탈퇴(비활성화) -->
+	<update id="deleteUser_tobe">
+		UPDATE tb_userinfo
+		   SET status_yn = '2'
+		 WHERE login_Id = #{loginId}
+	</update>
+	
+</mapper>

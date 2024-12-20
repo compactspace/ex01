@@ -1,0 +1,165 @@
+package kr.happyjob.study.board.controller.to_be;
+
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import javax.servlet.http.HttpSession;
+
+import org.apache.log4j.LogManager;
+import org.apache.log4j.Logger;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RequestPart;
+import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
+
+import kr.happyjob.study.board.model.NoticeModel;
+import kr.happyjob.study.board.service.NoticeService;
+
+@RestController
+@RequestMapping("/api/board/")
+public class NoticeRestController {
+	
+	@Autowired
+	private NoticeService noticeService;
+
+	// Set logger
+	private final Logger logger = LogManager.getLogger(this.getClass());
+
+	// Get class name for logger
+	private final String className = this.getClass().toString();
+
+	@RequestMapping("noticeListBody.do")
+	@ResponseBody
+	public Map<String, Object> getnoticeListBody(@RequestBody Map<String, Object> paramMap) throws Exception {
+		Map<String, Object> resultMap = new HashMap<>();
+		
+		int currentPage = Integer.valueOf((String) paramMap.get("currentPage"));
+		int pageSize = Integer.valueOf((String) paramMap.get("pageSize"));
+		int startSeq = (currentPage - 1) * pageSize;
+
+		paramMap.put("startSeq", startSeq);
+		paramMap.put("pageSize", pageSize);
+
+		List<NoticeModel> noticeList = noticeService.noticeList(paramMap);
+		int noticeCnt = noticeService.noticeListCnt(paramMap);
+		
+		resultMap.put("notice", noticeList);
+		resultMap.put("noticeCnt", noticeCnt);
+		
+		return resultMap;
+	}
+	
+	@RequestMapping("noticeListJson.do")
+	@ResponseBody
+	public Map<String, Object> getNoticeListJson(@RequestParam Map<String, Object> paramMap) throws Exception {
+		Map<String, Object> resultMap = new HashMap<>();
+
+		int currentPage = Integer.valueOf((String) paramMap.get("currentPage"));
+		int pageSize = Integer.valueOf((String) paramMap.get("pageSize"));
+
+		int startSeq = (currentPage - 1) * pageSize;
+
+		paramMap.put("startSeq", startSeq);
+		paramMap.put("pageSize", pageSize);
+
+		List<NoticeModel> noticeList = noticeService.noticeList(paramMap);
+		int noticeCnt = noticeService.noticeListCnt(paramMap);
+
+		resultMap.put("notice", noticeList);
+		resultMap.put("noticeCnt", noticeCnt);
+
+		return resultMap;
+	}
+
+	@RequestMapping("noticeSaveFileForm.do")
+	@ResponseBody
+	public Map<String, String> noticeSaveFileForm(@RequestPart(value = "file", required = false) MultipartFile[] files,
+			@RequestPart(value = "text", required = false) Map<String, Object> text) throws Exception {
+		Map<String, String> resultMap = new HashMap<>();
+		logger.info("file: " + files);
+		logger.info("text: " + text);
+
+		int result = noticeService.noticeSaveFileForm(files, text);
+
+		if (result > 0) {
+			resultMap.put("result", "success");
+		} else {
+			resultMap.put("result", "fail");
+		}
+
+		return resultMap;
+	}
+	
+	@RequestMapping("noticeUpdateBody.do")
+	@ResponseBody
+	public Map<String, String> updateNoticeBody(@RequestBody Map<String, Object> paramMap) throws Exception {
+		Map<String, String> resultMap = new HashMap<>();
+		logger.info("updateNotice: " + paramMap);
+
+		int result = noticeService.updateNotice(paramMap);
+
+		if (result > 0) {
+			resultMap.put("result", "success");
+		} else {
+			resultMap.put("result", "fail");
+		}
+
+		return resultMap;
+	}
+
+	@RequestMapping("noticeUpdateFileForm.do")
+	@ResponseBody
+	public Map<String, String> noticeUpdateFileForm(
+			@RequestPart(value = "file", required = false) MultipartFile[] files,
+			@RequestPart(value = "text", required = false) Map<String, Object> text) throws Exception {
+		Map<String, String> resultMap = new HashMap<>();
+		logger.info("file: " + files);
+		logger.info("text: " + text);
+
+		int result = noticeService.noticeUpdateFileForm(files, text);
+
+		if (result > 0) {
+			resultMap.put("result", "success");
+		} else {
+			resultMap.put("result", "fail");
+		}
+
+		return resultMap;
+	}
+	
+	@RequestMapping("noticeDeleteBody.do")
+	@ResponseBody
+	public Map<String, String> deteleNoticeBody(@RequestBody Map<String, Object> paramMap) throws Exception {
+		Map<String, String> resultMap = new HashMap<>();
+		logger.info("saveNotice: " + paramMap);
+
+		int result = noticeService.deleteNotice(paramMap);
+
+		if (result > 0) {
+			resultMap.put("result", "success");
+		} else {
+			resultMap.put("result", "fail");
+		}
+
+		return resultMap;
+	}
+	
+	@RequestMapping("noticeDetailBody.do")
+	@ResponseBody
+	public Map<String, Object> noticeDetailBody(@RequestBody Map<String, Object> paramMap, HttpSession session)
+			throws Exception {
+		Map<String, Object> resultMap = new HashMap<>();
+		logger.info("noticeDetail: " + paramMap);
+
+		NoticeModel detailValue = noticeService.noticeDetail(paramMap);
+		resultMap.put("detail", detailValue);
+
+		return resultMap;
+	}
+
+}

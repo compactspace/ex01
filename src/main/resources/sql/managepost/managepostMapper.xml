@@ -1,0 +1,180 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="kr.happyjob.study.managepost.dao.ManagepostDao">
+
+	
+	<select id="managePostDetail" resultType="kr.happyjob.study.managepost.model.ManagepostModel">
+		SELECT
+			  posting_id as postIdx
+			, biz_idx as bizIdx
+			, title
+			, exp_req as expRequired
+			, exp_years as expYears
+			, salary
+			, work_loc as workLocation
+			, openings
+			, pos_desc as posDescription
+			, duties
+			, req_qual as reqQualifications
+			, pref_qual as prefQualifications
+			, benefits
+			, post_date as postDate
+			, start_date as startDate
+			, end_date as endDate
+			, hiring_proc as hirProcess
+			, file_name as fileName
+			, app_status as appStatus
+			, phsycal_path as phsycalPath
+			, logical_path as logicalPath
+			, file_size as fileSize
+			, file_ext as fileExt
+		FROM
+			tb_hiring_post
+		WHERE posting_id = #{postIdx}
+		AND   biz_idx = #{bizIdx}
+	</select>
+
+	
+	<update id="updateAppStatus">
+		UPDATE tb_hiring_post
+		SET
+			app_status = #{appStatus}
+		WHERE posting_id = #{postIdx}
+	</update>
+	
+	
+	<select id="getPendingList" resultType="kr.happyjob.study.managepost.model.ManagepostModel">
+		SELECT 
+              posting_id as postIdx
+			, biz_idx as bizIdx
+			, title
+			, duties
+			, work_loc as workLocation 
+			, exp_req as expRequired 
+			, post_date as postDate
+			, end_date as endDate
+			, app_status as appStatus
+        FROM 
+	     	tb_hiring_post
+	    <where>
+	        app_status != '승인'
+	    
+			<if test="(searchTitle != null) and (!''.equals(searchTitle))">
+				AND title LIKE CONCAT('%', #{searchTitle},'%')
+			</if>
+			<if test="(searchStDate != null) and (!''.equals(searchStDate))">
+				AND post_date <![CDATA[>=]]> STR_TO_DATE(#{searchStDate}, '%Y-%m-%d')
+			</if>
+			<if test="(searchEdDate != null) and (!''.equals(searchEdDate))">
+				AND post_date <![CDATA[<=]]> STR_TO_DATE(#{searchEdDate}, '%Y-%m-%d')
+			</if>
+		</where>
+		ORDER BY posting_id DESC
+		LIMIT #{startSeq}, #{pageSize} 	
+	</select>
+	
+	<select id="pendingpostListCnt" resultType="int">
+		SELECT
+			count(*)
+		FROM.
+			tb_hiring_post
+		<where>
+		     app_status != '승인'
+	  
+			<if test="(searchTitle != null) and (!''.equals(searchTitle))">
+				AND title LIKE CONCAT('%', #{searchTitle},'%')
+			</if>
+			<if test="(searchStDate != null) and (!''.equals(searchStDate))">
+				AND post_date <![CDATA[>=]]> STR_TO_DATE(#{searchStDate}, '%Y-%m-%d')
+			</if>
+			<if test="(searchEdDate != null) and (!''.equals(searchEdDate))">
+				AND post_date <![CDATA[<=]]> STR_TO_DATE(#{searchEdDate}, '%Y-%m-%d')
+			</if>
+		</where>
+		</select>
+		
+		<select id="getApprovalList" resultType="kr.happyjob.study.managepost.model.ManagepostModel">
+		SELECT 
+              posting_id as postIdx
+			, biz_idx as bizIdx
+			, title
+			, duties
+			, work_loc as workLocation 
+			, exp_req as expRequired 
+			, post_date as postDate
+			, end_date as endDate
+			, app_status as appStatus
+         FROM 
+		tb_hiring_post
+		  <where>
+	        app_status = '승인'
+			       
+			<if test="(searchTitle != null) and (!''.equals(searchTitle))">
+				AND title LIKE CONCAT('%', #{searchTitle},'%')
+			</if>
+			<if test="(searchStDate != null) and (!''.equals(searchStDate))">
+				AND post_date <![CDATA[>=]]> STR_TO_DATE(#{searchStDate}, '%Y-%m-%d')
+			</if>
+			<if test="(searchEdDate != null) and (!''.equals(searchEdDate))">
+				AND post_date <![CDATA[<=]]> STR_TO_DATE(#{searchEdDate}, '%Y-%m-%d')
+			</if>
+		</where>
+		ORDER BY posting_id DESC
+		LIMIT #{startSeq}, #{pageSize} 	 
+	</select>
+	
+	<select id="approvalPostListCnt" resultType="int">
+		SELECT
+			count(*)
+		FROM.
+			tb_hiring_post
+		<where>
+		     app_status = '승인'
+			        
+			<if test="(searchTitle != null) and (!''.equals(searchTitle))">
+				AND title LIKE CONCAT('%', #{searchTitle},'%')
+			</if>
+			<if test="(searchStDate != null) and (!''.equals(searchStDate))">
+				AND post_date <![CDATA[>=]]> STR_TO_DATE(#{searchStDate}, '%Y-%m-%d')
+			</if>
+			<if test="(searchEdDate != null) and (!''.equals(searchEdDate))">
+				AND post_date <![CDATA[<=]]> STR_TO_DATE(#{searchEdDate}, '%Y-%m-%d')
+			</if>
+		</where>
+	</select>
+	
+	
+	<!-- TO BE -->
+	
+		<select id="managePostDetailSearchByPostIdx" resultType="kr.happyjob.study.managepost.model.ManagepostModel">
+		SELECT
+			  posting_id as postIdx
+			, biz_idx as bizIdx
+			, title
+			, exp_req as expRequired
+			, exp_years as expYears
+			, salary
+			, work_loc as workLocation
+			, openings
+			, pos_desc as posDescription
+			, duties
+			, req_qual as reqQualifications
+			, pref_qual as prefQualifications
+			, benefits
+			, post_date as postDate
+			, start_date as startDate
+			, end_date as endDate
+			, hiring_proc as hirProcess
+			, file_name as fileName
+			, app_status as appStatus
+			, phsycal_path as phsycalPath
+			, logical_path as logicalPath
+			, file_size as fileSize
+			, file_ext as fileExt
+		FROM
+			tb_hiring_post
+		WHERE posting_id = #{postIdx}
+	</select>
+	
+	
+</mapper>

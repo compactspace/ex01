@@ -1,0 +1,208 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="kr.happyjob.study.board.dao.NoticeDao">
+	<select id="noticeList" resultType="kr.happyjob.study.board.model.NoticeModel">
+		SELECT
+			  notice_idx as noticeIdx
+			, title
+			, content 
+			, author 
+			, created_date as createdDate
+		FROM
+			tb_notice
+		<where> 
+			<if test="(searchTitle != null) and (!''.equals(searchTitle))">
+				AND title LIKE CONCAT('%', #{searchTitle},'%')
+			</if>
+			<if test="(searchStDate != null) and (!''.equals(searchStDate))">
+				AND created_date <![CDATA[>=]]> STR_TO_DATE(#{searchStDate}, '%Y-%m-%d')
+			</if>
+			<if test="(searchEdDate != null) and (!''.equals(searchEdDate))">
+				AND created_date <![CDATA[<=]]> STR_TO_DATE(#{searchEdDate}, '%Y-%m-%d')
+			</if>
+		</where>
+		ORDER BY notice_idx DESC
+		LIMIT #{startSeq}, #{pageSize}
+	</select>
+	
+	<select id="noticeListCnt" resultType="int">
+		SELECT
+			count(*)
+		FROM.
+			tb_notice
+		<where> 
+			<if test="(searchTitle != null) and (!''.equals(searchTitle))">
+				AND title LIKE CONCAT('%', #{searchTitle},'%')
+			</if>
+			<if test="(searchStDate != null) and (!''.equals(searchStDate))">
+				AND created_date <![CDATA[>=]]> STR_TO_DATE(#{searchStDate}, '%Y-%m-%d')
+			</if>
+			<if test="(searchEdDate != null) and (!''.equals(searchEdDate))">
+				AND created_date <![CDATA[<=]]> STR_TO_DATE(#{searchEdDate}, '%Y-%m-%d')
+			</if>
+		</where>
+	</select>
+	
+	<insert id="saveNotice">
+		<selectKey resultType="int" keyProperty="seq" order="BEFORE">
+			SELECT IFNULL(max(notice_idx), 0) + 1 FROM tb_notice
+		</selectKey>
+		INSERT INTO tb_notice
+		(
+			  notice_idx
+			, title
+			, content
+			, author
+			, created_date
+		) values (
+			  #{seq}
+			, #{title}
+			, #{context}
+			, #{loginId}
+			, now()
+		)
+	</insert>
+	
+	<insert id="saveFileNotice">
+		<selectKey resultType="int" keyProperty="seq" order="BEFORE">
+			SELECT IFNULL(max(notice_idx), 0) + 1 FROM tb_notice
+		</selectKey>
+		INSERT INTO tb_notice
+		(
+			  notice_idx
+			, title
+			, content
+			, author
+			, created_date
+			<if test="'Y'.toString() eq fileYn">
+				, file_name
+				, phsycal_path
+				, logical_path
+				, file_size
+				, file_ext
+			</if>
+			
+		) values (
+			  #{seq}
+			, #{noticeTit}
+			, #{noticeCon}
+			, #{loginId}
+			, now()
+			<if test="'Y'.toString() eq fileYn">
+				, #{fileInfo.file_nm}
+				, #{fileInfo.file_loc}
+				, #{fileInfo.vrfile_loc}
+				, #{fileInfo.file_size}
+				, #{fileInfo.fileExtension}
+			</if>
+		)
+	</insert>
+	
+	<insert id="saveFileNoticeForm">
+		<selectKey resultType="int" keyProperty="seq" order="BEFORE">
+			SELECT IFNULL(max(notice_idx), 0) + 1 FROM tb_notice
+		</selectKey>
+		INSERT INTO tb_notice
+		(
+			  notice_idx
+			, title
+			, content
+			, author
+			, created_date
+			<if test="'Y'.toString() eq fileYn">
+				, file_name
+				, phsycal_path
+				, logical_path
+				, file_size
+				, file_ext
+			</if>
+			
+		) values (
+			  #{seq}
+			, #{title}
+			, #{context}
+			, #{loginId}
+			, now()
+			<if test="'Y'.toString() eq fileYn">
+				, #{fileInfo.file_nm}
+				, #{fileInfo.file_loc}
+				, #{fileInfo.vrfile_loc}
+				, #{fileInfo.file_size}
+				, #{fileInfo.fileExtension}
+			</if>
+		)
+	</insert>
+	
+	<update id="updateNotice">
+		UPDATE tb_notice
+		SET
+			title = #{title},
+			content = #{context},
+			updated_date = now()
+		WHERE notice_idx = #{noticeSeq}
+	</update>
+	
+	<update id="updateFileNotice">
+		UPDATE tb_notice
+		SET
+			  title = #{noticeTit}
+			, content = #{noticeCon}
+			, updated_date = now()
+			<if test="'Y'.toString() eq fileYn">
+			, file_name = #{fileInfo.file_nm}
+			, phsycal_path = #{fileInfo.file_loc}
+			, logical_path = #{fileInfo.vrfile_loc}
+			, file_size = #{fileInfo.file_size}
+			, file_ext = #{fileInfo.fileExtension}
+			</if>
+		WHERE notice_idx = #{noticeSeq}
+	</update>
+	
+	<update id="updateFileNoticeForm">
+		UPDATE tb_notice
+		SET
+			  title = #{title}
+			, content = #{context}
+			, updated_date = now()
+			<if test="'Y'.toString() eq fileYn">
+			, file_name = #{fileInfo.file_nm}
+			, phsycal_path = #{fileInfo.file_loc}
+			, logical_path = #{fileInfo.vrfile_loc}
+			, file_size = #{fileInfo.file_size}
+			, file_ext = #{fileInfo.fileExtension}
+			</if>
+		WHERE notice_idx = #{noticeSeq}
+	</update>
+	
+	<delete id="deleteNotice">
+		DELETE FROM tb_notice
+		WHERE notice_idx = #{noticeSeq}
+	</delete>
+	
+	<select id="noticeDetail" resultType="kr.happyjob.study.board.model.NoticeModel">
+		SELECT
+			  notice_idx as noticeIdx
+			, title
+			, content 
+			, author
+		FROM
+			tb_notice
+		WHERE notice_idx = #{noticeSeq}
+	</select>
+	
+	<select id="noticeDetailFile" resultType="kr.happyjob.study.board.model.NoticeModel">
+		SELECT
+			  notice_idx as noticeIdx
+			, title
+			, content 
+			, author
+			, file_name as fileName
+			, phsycal_path as phsycalPath
+			, logical_path as logicalPath
+			, file_size as fileSize
+			, file_ext as fileExt
+		FROM
+			tb_notice
+		WHERE notice_idx = #{noticeSeq}
+	</select>
+</mapper>

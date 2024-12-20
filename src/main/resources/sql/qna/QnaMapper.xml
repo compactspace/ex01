@@ -1,0 +1,180 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="kr.happyjob.study.board.dao.QnaDao">
+	<select id="qnaList" resultType="kr.happyjob.study.board.model.QnaModel">
+		SELECT
+			  qna_idx as qnaIdx
+			, title
+			, content 
+			, author 
+			, created_date as createdDate
+			, ans_content
+		FROM
+			tb_qna
+		<where>
+			<if test="qna_type != null">
+				AND qna_type = #{qna_type}
+			</if>
+			<if test="(searchTitle != null) and (!''.equals(searchTitle))">
+				AND title LIKE CONCAT('%', #{searchTitle},'%')
+			</if>
+			<if test="(searchStDate != null) and (!''.equals(searchStDate))">
+				AND created_date <![CDATA[>=]]> STR_TO_DATE(#{searchStDate}, '%Y-%m-%d')
+			</if>
+			<if test="(searchEdDate != null) and (!''.equals(searchEdDate))">
+				AND created_date <![CDATA[<=]]> STR_TO_DATE(#{searchEdDate}, '%Y-%m-%d')
+			</if>
+		</where>
+		ORDER BY qna_idx DESC
+		LIMIT #{startSeq}, #{pageSize}
+	</select>
+	
+	<select id="qnaMyList" resultType="kr.happyjob.study.board.model.QnaModel">
+		SELECT
+			  qna_idx as qnaIdx
+			, title
+			, content 
+			, author 
+			, created_date as createdDate
+			, ans_content
+		FROM
+			tb_qna
+		<where>
+			<if test="loginId != null">
+				AND author = #{loginId}
+			</if>
+			<if test="(searchTitle != null) and (!''.equals(searchTitle))">
+				AND title LIKE CONCAT('%', #{searchTitle},'%')
+			</if>
+			<if test="(searchStDate != null) and (!''.equals(searchStDate))">
+				AND created_date <![CDATA[>=]]> STR_TO_DATE(#{searchStDate}, '%Y-%m-%d')
+			</if>
+			<if test="(searchEdDate != null) and (!''.equals(searchEdDate))">
+				AND created_date <![CDATA[<=]]> STR_TO_DATE(#{searchEdDate}, '%Y-%m-%d')
+			</if>
+		</where>
+		ORDER BY qna_idx DESC
+		LIMIT #{startSeq}, #{pageSize}
+	</select>
+	
+	<select id="qnaListCnt" resultType="int">
+		SELECT
+			count(*)
+		FROM
+			tb_qna
+		<where>
+			<if test="qna_type != null">
+				AND qna_type = #{qna_type}
+			</if>
+			<if test="(searchTitle != null) and (!''.equals(searchTitle))">
+				AND title LIKE CONCAT('%', #{searchTitle},'%')
+			</if>
+			<if test="(searchStDate != null) and (!''.equals(searchStDate))">
+				AND created_date <![CDATA[>=]]> STR_TO_DATE(#{searchStDate}, '%Y-%m-%d')
+			</if>
+			<if test="(searchEdDate != null) and (!''.equals(searchEdDate))">
+				AND created_date <![CDATA[<=]]> STR_TO_DATE(#{searchEdDate}, '%Y-%m-%d')
+			</if>
+		</where>
+	</select>
+	
+	<insert id="saveFileQna">
+		<selectKey resultType="int" keyProperty="seq" order="BEFORE">
+			SELECT IFNULL(max(qna_idx), 0) + 1 FROM tb_qna
+		</selectKey>
+		INSERT INTO tb_qna
+		(
+			  qna_idx
+			, title
+			, content
+			, author
+			, created_date
+			, password
+			, qna_type
+			<if test="'Y'.toString() eq fileYn">
+				, file_name
+				, phsycal_path
+				, logical_path
+				, file_size
+				, file_ext
+			</if>
+			
+		) values (
+			  #{seq}
+			, #{qnaTit}
+			, #{qnaCon}
+			, #{loginId}
+			, now()
+			, #{password}
+			, #{qna_type}
+			<if test="'Y'.toString() eq fileYn">
+				, #{fileInfo.file_nm}
+				, #{fileInfo.file_loc}
+				, #{fileInfo.vrfile_loc}
+				, #{fileInfo.file_size}
+				, #{fileInfo.fileExtension}
+			</if>
+		)
+	</insert>
+	
+	<update id="updateFileQna">
+		UPDATE tb_qna
+		SET
+			  title = #{qnaTit}
+			, content = #{qnaCon}
+			, updated_date = now()
+			, password = #{password}
+			<if test="'Y'.toString() eq fileYn">
+			, file_name = #{fileInfo.file_nm}
+			, phsycal_path = #{fileInfo.file_loc}
+			, logical_path = #{fileInfo.vrfile_loc}
+			, file_size = #{fileInfo.file_size}
+			, file_ext = #{fileInfo.fileExtension}
+			</if>
+			, ans_content = #{ans_content}
+			, ans_date = now()
+		WHERE qna_idx = #{qnaSeq}
+	</update>
+	
+	<update id="updateFileQnaForm">
+		UPDATE tb_qna
+		SET
+			  title = #{qnaTit}
+			, content = #{qnaCon}
+			, updated_date = now()
+			, password = #{password}
+			<if test="'Y'.toString() eq fileYn">
+			, file_name = #{fileInfo.file_nm}
+			, phsycal_path = #{fileInfo.file_loc}
+			, logical_path = #{fileInfo.vrfile_loc}
+			, file_size = #{fileInfo.file_size}
+			, file_ext = #{fileInfo.fileExtension}
+			</if>
+			, ans_content = #{ans_content}
+			, ans_date = now()
+		WHERE qna_idx = #{qnaSeq}
+	</update>
+		
+	<delete id="deleteQna">
+		DELETE FROM tb_qna
+		WHERE qna_idx = #{qnaSeq}
+	</delete>
+	
+	<select id="qnaDetailFile" resultType="kr.happyjob.study.board.model.QnaModel">
+		SELECT
+			  qna_idx as qnaIdx
+			, title
+			, content 
+			, author
+			, file_name as fileName
+			, phsycal_path as phsycalPath
+			, logical_path as logicalPath
+			, file_size as fileSize
+			, file_ext as fileExt
+			, password
+			, ans_content
+		FROM
+			tb_qna
+		WHERE qna_idx = #{qnaSeq}
+	</select>
+</mapper>

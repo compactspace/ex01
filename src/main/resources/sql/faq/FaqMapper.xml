@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="kr.happyjob.study.board.dao.FaqDao">
+	<select id="faqList" resultType="kr.happyjob.study.board.model.FaqModel">
+		SELECT
+			  faq_idx
+			, title
+			, author
+			, content
+			, created_date
+		FROM
+			tb_faq
+			<where> 
+			<if test="faq_type != null">
+				AND faq_type = #{faq_type}
+			</if>
+			<if test="(searchTitle != null) and (!''.equals(searchTitle))">
+				AND title LIKE CONCAT('%', #{searchTitle},'%')
+			</if>
+			<if test="(searchStDate != null) and (!''.equals(searchStDate))">
+				AND created_date <![CDATA[>=]]> STR_TO_DATE(#{searchStDate}, '%Y-%m-%d')
+			</if>
+			<if test="(searchEdDate != null) and (!''.equals(searchEdDate))">
+				AND created_date <![CDATA[<=]]> STR_TO_DATE(#{searchEdDate}, '%Y-%m-%d')
+			</if>
+		</where>
+		ORDER BY created_date DESC
+		LIMIT #{startSeq}, #{pageSize}
+	</select>
+	
+ 	<select id="faqListCnt" resultType="int">
+		SELECT
+			count(*)
+		FROM
+			tb_faq
+		<where>
+			<if test="faq_type != null">
+				AND faq_type = #{faq_type}
+			</if>
+			<if test="(searchTitle != null) and (!''.equals(searchTitle))">
+				AND title LIKE CONCAT('%', #{searchTitle},'%')
+			</if>
+			<if test="(searchStDate != null) and (!''.equals(searchStDate))">
+				AND created_date <![CDATA[>=]]> STR_TO_DATE(#{searchStDate}, '%Y-%m-%d')
+			</if>
+			<if test="(searchEdDate != null) and (!''.equals(searchEdDate))">
+				AND created_date <![CDATA[<=]]> STR_TO_DATE(#{searchEdDate}, '%Y-%m-%d')
+			</if>
+		</where>
+	</select>
+	
+	<insert id="saveFaq">
+		<selectKey resultType="int" keyProperty="seq" order="BEFORE">
+			SELECT IFNULL(max(faq_idx), 0) + 1 FROM tb_faq
+		</selectKey>
+		INSERT INTO tb_faq
+		(
+			  faq_idx
+			, title
+			, content
+			, author
+			, created_date
+			, faq_type
+		) values (
+			  #{seq}
+			, #{title}
+			, #{context}
+			, #{loginId}
+			, now()
+			, #{faq_type}
+		)
+	</insert>
+	
+	<update id="updateFaq">
+		UPDATE tb_faq
+		SET
+			title = #{title}
+			,content = #{context}
+			,updated_date = now()
+			,faq_type = #{faq_type}
+		WHERE faq_idx = #{faqSeq}
+	</update>
+	
+	<delete id="deleteFaq">
+		DELETE FROM tb_faq
+		WHERE faq_idx = #{faqSeq}
+	</delete>
+	
+	<select id="faqDetail" resultType="kr.happyjob.study.board.model.FaqModel">
+		SELECT
+			  faq_idx
+			, title
+			, content 
+			, author
+			, faq_type
+		FROM
+			tb_faq
+		WHERE faq_idx = #{faqSeq}
+	</select>
+</mapper>

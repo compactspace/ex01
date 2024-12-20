@@ -1,0 +1,216 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="kr.happyjob.study.apply.dao.HistoryDao">
+
+	<select id="getApplyHistoryList" resultType="kr.happyjob.study.apply.model.HistoryModel">
+		SELECT
+			  tb_apply.app_id AS appId
+			, tb_apply.user_idx AS userIdx
+			, tb_apply.posting_id AS postingId
+			, tb_apply.apply_date AS applyDate
+			, tb_apply.viewed AS viewed
+			, tb_apply.status AS status
+			, tb_apply.res_idx AS resIdx
+			, tb_hiring_post.title AS postTitle
+			, tb_hiring_post.biz_idx AS bizIdx
+			, tb_biz.biz_name AS bizName
+		FROM
+			tb_apply
+		INNER JOIN
+			tb_hiring_post
+		ON
+			tb_apply.posting_id = tb_hiring_post.posting_id
+		INNER JOIN
+			tb_biz
+		ON
+			tb_hiring_post.biz_idx = tb_biz.biz_idx
+		WHERE
+			tb_apply.user_idx = (
+								SELECT
+									tb_userinfo.user_idx
+								FROM
+									tb_userinfo
+								WHERE
+									login_id = #{loginId}
+								AND 
+									name = #{userNm}
+								AND 
+									user_type = #{userType}
+								)
+	</select>
+	
+	<select id="getApplyHistoryListByFilter" resultType="kr.happyjob.study.apply.model.HistoryModel">
+		SELECT
+			  tb_apply.app_id AS appId
+			, tb_apply.user_idx AS userIdx
+			, tb_apply.posting_id AS postingId
+			, tb_apply.apply_date AS applyDate
+			, tb_apply.viewed AS viewed
+			, tb_apply.status AS status
+			, tb_apply.res_idx AS resIdx
+			, tb_hiring_post.title AS postTitle
+			, tb_hiring_post.biz_idx AS bizIdx
+			, tb_biz.biz_name AS bizName
+		FROM
+			tb_apply
+		INNER JOIN
+			tb_hiring_post
+		ON
+			tb_apply.posting_id = tb_hiring_post.posting_id
+		INNER JOIN
+			tb_biz
+		ON
+			tb_hiring_post.biz_idx = tb_biz.biz_idx
+		WHERE
+			tb_apply.user_idx = (
+								SELECT
+									tb_userinfo.user_idx
+								FROM
+									tb_userinfo
+								WHERE
+									login_id = #{loginId}
+								AND 
+									name = #{userNm}
+								AND 
+									user_type = #{userType}
+								)
+		AND
+			tb_apply.apply_date BETWEEN #{startDate} AND NOW()
+		AND
+		(
+			tb_hiring_post.title LIKE CONCAT('%', #{keyWord}, '%')
+		OR
+			tb_biz.biz_name LIKE CONCAT('%', #{keyWord}, '%')
+		)
+			
+		AND
+			<if test="viewStatus == all">
+				tb_apply.viewed IN (0,1)
+			</if>
+			<if test="viewStatus != all">
+				tb_apply.viewed = #{viewStatus}
+			</if>
+		ORDER BY
+			tb_apply.app_id ${sortOrder}
+	</select>
+	
+	<select id="getApplyHistoryListByFilterRest" resultType="kr.happyjob.study.apply.model.HistoryModel">
+		SELECT
+			  tb_apply.app_id AS appId
+			, tb_apply.user_idx AS userIdx
+			, tb_apply.posting_id AS postingId
+			, tb_apply.apply_date AS applyDate
+			, tb_apply.viewed AS viewed
+			, tb_apply.status AS status
+			, tb_apply.res_idx AS resIdx
+			, tb_hiring_post.title AS postTitle
+			, tb_hiring_post.biz_idx AS bizIdx
+			, tb_biz.biz_name AS bizName
+		FROM
+			tb_apply
+		INNER JOIN
+			tb_hiring_post
+		ON
+			tb_apply.posting_id = tb_hiring_post.posting_id
+		INNER JOIN
+			tb_biz
+		ON
+			tb_hiring_post.biz_idx = tb_biz.biz_idx
+		WHERE
+			tb_apply.user_idx = (
+								SELECT
+									tb_userinfo.user_idx
+								FROM
+									tb_userinfo
+								WHERE
+									login_id = #{loginId}
+								AND 
+									name = #{userNm}
+								AND 
+									user_type = #{userType}
+								)
+		<if test="(startDate != null) and (!''.equals(startDate))">
+		AND
+			tb_apply.apply_date BETWEEN #{startDate} AND NOW()
+		</if>
+		<if test="(keyWord != null) and (!''.equals(keyWord))">
+		AND
+		(
+			tb_hiring_post.title LIKE CONCAT('%', #{keyWord}, '%')
+		OR
+			tb_biz.biz_name LIKE CONCAT('%', #{keyWord}, '%')
+		)
+		</if>
+		
+			<if test="viewStatus == 'all'">
+			AND
+				tb_apply.viewed IN (0,1)
+			</if>
+			<if test="(viewStatus != 'all') and (viewStatus != null) and (!''.equals(viewStatus))" >
+			AND
+				tb_apply.viewed = #{viewStatus}
+			</if>
+			
+			<if test="(sortOrder == null) or (''.equals(sortOrder))">
+			ORDER BY
+				tb_apply.app_id ASC LIMIT #{startSeq}, #{pageSize}
+			</if>
+			<if test="(sortOrder != null) and (!''.equals(sortOrder))">
+			ORDER BY
+				tb_apply.app_id ${sortOrder} LIMIT #{startSeq}, #{pageSize}
+			</if>
+			
+	</select>
+	
+	<select id="historyListCnt" resultType="int">
+	SELECT
+		count(*)
+	FROM
+			tb_apply
+		INNER JOIN
+			tb_hiring_post
+		ON
+			tb_apply.posting_id = tb_hiring_post.posting_id
+		INNER JOIN
+			tb_biz
+		ON
+			tb_hiring_post.biz_idx = tb_biz.biz_idx
+		WHERE
+			tb_apply.user_idx = (
+								SELECT
+									tb_userinfo.user_idx
+								FROM
+									tb_userinfo
+								WHERE
+									login_id = #{loginId}
+								AND 
+									name = #{userNm}
+								AND 
+									user_type = #{userType}
+								)
+		<if test="(startDate != null) and (!''.equals(startDate))">
+		AND
+			tb_apply.apply_date BETWEEN #{startDate} AND NOW()
+		</if>
+		<if test="(keyWord != null) and (!''.equals(keyWord))">
+		AND
+		(
+			tb_hiring_post.title LIKE CONCAT('%', #{keyWord}, '%')
+		OR
+			tb_biz.biz_name LIKE CONCAT('%', #{keyWord}, '%')
+		)
+		</if>
+			<if test="viewStatus == all">
+			AND
+				tb_apply.viewed IN (0,1)
+			</if>
+			<if test="(viewStatus != all) and (viewStatus != null) and (!''.equals(viewStatus))" >
+			AND
+				tb_apply.viewed = #{viewStatus}
+			</if>
+	</select>
+	
+	<delete id="cancleApply">
+		DELETE FROM tb_apply WHERE app_id = #{appId}
+	</delete>
+</mapper>

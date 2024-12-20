@@ -1,0 +1,138 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="kr.happyjob.study.manageuser.dao.ManageuserDao">
+
+	<!-- 개인회원 -->
+	<select id="applicantList" resultType="kr.happyjob.study.manageuser.model.ManageuserModel">
+		SELECT
+			  user_idx as userIdx
+		  	, login_id as loginId
+		  	, name
+		  	, email
+		 	, regdate
+  	     FROM tb_userinfo
+  		WHERE user_type = 'A' AND status_yn = '1'
+  			<if test="(searchName != null) and (!''.equals(searchName))">
+  				AND name LIKE CONCAT('%', #{searchName}, '%')
+  			</if>
+  		ORDER BY user_idx
+  		LIMIT #{startSeq}, #{pageSize}
+	</select>
+	
+	<select id="applicantListCnt" resultType="int">
+		SELECT count(*)
+		  FROM tb_userinfo
+		 WHERE user_type = 'A' AND status_yn = '1'
+  			<if test="(searchName != null) and (!''.equals(searchName))">
+  				AND name LIKE CONCAT('%', #{searchName}, '%')
+  			</if>
+	</select>
+	
+	<select id="applicantManageDetail" resultType="kr.happyjob.study.manageuser.model.ManageuserModel">
+		SELECT
+				login_id as loginId
+		  	  , name
+		  	  , user_type as userType
+		  	  , sex
+		      , birthday
+		  	  , phone
+		      , email
+		      , regdate
+		      , status_yn as statusYn
+		      , zip_code as zipCode
+		  	  , address
+		  	  , detail_address as detailAddress
+		  FROM tb_userinfo
+		WHERE login_id = #{loginId}
+	</select>
+	
+	<update id="applicantInfoUpdate">
+		UPDATE tb_userinfo
+		   SET
+		  		 name = #{name}
+		       , user_type = #{userType}
+		       , sex = #{sex}
+		       , birthday = #{birthday}
+		       , phone = #{phone}
+		       , email = #{email}
+		       , regdate = #{regdate}
+		       , status_yn = #{statusYn}
+		       , zip_code = #{zipCode}
+		       , address = #{address}
+		       , detail_address = #{detailAddress}
+		 WHERE login_id = #{loginId}
+	</update>
+	
+	<update id="applicantPwReset">
+		UPDATE tb_userinfo
+		   SET password = 1234
+		 WHERE login_id = #{loginId} 
+	</update>
+	
+	<update id="applicantPwResetTo1234">
+		UPDATE tb_userinfo
+		   SET password = #{initPassword}
+		 WHERE login_id = #{loginId} 
+	</update>
+	
+	<!-- 기업회원 -->
+	<select id="bizList" resultType="kr.happyjob.study.manageuser.model.ManageuserModel">
+		SELECT
+			biz_idx as bizIdx
+		  , biz_name as bizName
+		  , biz_ceo_name as bizCeoName
+		  , biz_contact as bizContact
+		  , biz_web_url as bizWebUrl
+  	      FROM tb_biz
+  	      <where>
+  			<if test="(searchName != null) and (!''.equals(searchName))">
+  				AND biz_name LIKE CONCAT('%', #{searchName}, '%')
+  			</if>
+  		</where>
+  		ORDER BY bizIdx
+  		LIMIT #{startSeq}, #{pageSize}
+	</select>
+	
+	<select id="bizListCnt" resultType="int">
+		SELECT count(*)
+		  FROM tb_biz
+		  <where>
+		  	<if test="(searchName != null) and (!''.equals(searchName))">
+  				AND biz_name LIKE CONCAT('%', #{searchName}, '%')
+  			</if>
+		  </where>
+	</select>
+	
+	<select id="bizManageDetail" resultType="kr.happyjob.study.manageuser.model.ManageuserModel">
+		SELECT
+				biz_idx as bizIdx
+		  	  , biz_name as bizName
+		      , biz_ceo_name as bizCeoName
+		      , biz_emp_count as bizEmpCount
+		      , biz_revenue as bizRevenue
+		      , biz_contact as bizContact
+		  	  , biz_addr as bizAddr
+		      , biz_web_url as bizWebUrl
+		      , biz_found_date as bizFoundDate
+		      , biz_intro as bizIntro
+		   FROM tb_biz
+		  WHERE biz_idx = #{bizIdx}
+	</select>
+	
+	<update id="bizInfoUpdate">
+		UPDATE tb_biz
+		   SET
+		   		biz_name = #{bizName}
+		   	  , biz_ceo_name = #{bizCeoName}
+		   	  , biz_emp_count = #{bizEmpCount}
+		   	  , biz_revenue = #{bizRevenue}
+		   	  , biz_contact = #{bizContact}
+		   	  , biz_addr = #{bizAddr}
+		   	  , biz_web_url = #{bizWebUrl}
+		   	  , biz_found_date = #{bizFoundDate}
+			  , biz_intro = #{bizIntro}
+	     WHERE biz_idx = #{bizIdx}
+	</update>
+	
+	
+</mapper>

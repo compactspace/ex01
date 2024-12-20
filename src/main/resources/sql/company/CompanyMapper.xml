@@ -1,0 +1,155 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper	namespace="kr.happyjob.study.company.dao.CompanyDao">
+	
+	
+	<!-- 채용담당자가 회사를 등록했는지 id로 체크  -->
+	<select id="companyGetIndex" resultType="int" parameterType="int">
+		SELECT
+			COALESCE(MAX(biz_idx), 0)
+		FROM
+			tb_biz
+		where
+			login_id = #{loginId}
+	</select>
+	<!-- 채용담당자가 회사를 등록했는지 id로 체크  -->
+	<select id="companyCkId" resultType="String">
+		SELECT
+			login_id
+		FROM
+			tb_biz
+		where
+			login_id = #{loginId}
+	</select>
+	
+	<!-- 디테일 id 조건으로 셀렉트 -->
+	<!-- update에 뿌리기 위함 -->
+	<select id="companyDetailId" resultType="kr.happyjob.study.company.model.CompanyModel">
+		SELECT
+			  biz_idx as bizIdx
+			, biz_name as bizName
+			, biz_addr as bizAddr
+			, biz_contact as bizContact
+			, biz_web_url  as bizWebUrl
+			, biz_ceo_name as bizCeoName
+			, biz_found_date as bizFoundDate
+			, biz_emp_count as bizEmpCount
+			, biz_revenue as bizRevenue
+			, biz_intro as bizIntro
+			, biz_logo as bizLogo  
+			, login_id as loginId
+			, phsycal_path as phsycalPath
+			, logical_path as logicalPath
+			, file_size  as fileSize
+			, file_ext as fileExt
+		FROM
+			tb_biz
+		where
+			login_id = #{loginId}
+	</select>
+
+		<!--채용담당자가 회사를 등록하는 메퍼 -->
+	<insert id="companySave">
+		<selectKey resultType="int" keyProperty="seq" order="BEFORE">
+			select ifnull(max(biz_idx),0)+1 from tb_biz
+		</selectKey>
+		INSERT INTO tb_biz
+		(
+			  biz_idx 
+			, biz_name 
+			, biz_addr 
+			, biz_contact
+			, biz_web_url 
+			, biz_ceo_name 
+			, biz_found_date 
+			, biz_emp_count 
+			, biz_revenue
+			, biz_intro 
+			, login_id 
+			, user_idx
+			<if test="'Y'.toString() eq fileYn">
+			, biz_logo  
+			, phsycal_path 
+			, logical_path 
+			, file_size  
+			, file_ext
+			</if>
+			
+		)values(
+				#{seq}
+			  , #{bizName}
+			  , #{bizAddr}
+			  , #{bizContact}
+			  , #{bizWebUrl}
+			  , #{bizCeoName}
+		  	  , #{bizFoundDate}
+			  , #{bizEmpCount}
+			  , #{bizRevenue}
+			  , #{bizIntro}
+			  , #{loginId}
+			  , #{userIdx}
+			  <if test="'Y'.toString() eq fileYn">
+				, #{fileInfo.file_nm}
+				, #{fileInfo.file_loc}
+				, #{fileInfo.vrfile_loc}
+				, #{fileInfo.file_size}
+				, #{fileInfo.fileExtension}
+			</if>
+		)
+	</insert>
+	<!-- 채용담당자가 등록한 회사를 조회하는 매퍼 파일x-->
+	<select id="companyDetail" resultType="kr.happyjob.study.company.model.CompanyModel">
+		SELECT
+			   biz_idx as bizIdx 
+			, biz_name as bizName
+			, biz_addr as bizAddr
+			, biz_contact as bizContact
+			, biz_web_url as bizWebUrl
+			, biz_ceo_name as bizCeoName
+			, biz_found_date as bizFoundDate
+			, biz_emp_count as bizEmpCount
+			, biz_revenue as bizRevenue
+			, biz_intro as bizIntro
+			, login_id as loginId
+			<!-- 파일에 관한 -->
+			, biz_logo as bizLogo
+			, phsycal_path as phsycalPath
+			, logical_path as logicalPath
+			, file_size as fileSize
+			, file_ext as fileExt
+		FROM
+			tb_biz
+		where 
+			biz_idx = #{bizIdx}
+	</select>
+	<!-- 채용담당자가 회사를 수정하는 매퍼 파일x-->
+	<update id="companyUpdate" >
+		UPDATE 
+			tb_biz
+		SET
+			  biz_name = #{bizName}
+			  , biz_addr = #{bizAddr}
+			  , biz_contact = #{bizContact}
+			  , biz_web_url = #{bizWebUrl}
+			  , biz_ceo_name = #{bizCeoName}
+		  	  , biz_found_date = #{bizFoundDate}
+			  , biz_emp_count = #{bizEmpCount}
+			  , biz_revenue = #{bizRevenue}
+			  , biz_intro =#{bizIntro}
+			 <if test="'Y'.toString() eq fileYn">
+			,  biz_logo =#{fileInfo.file_nm}
+			, phsycal_path= #{fileInfo.file_loc}
+			, logical_path =#{fileInfo.vrfile_loc}
+			, file_size = #{fileInfo.file_size}
+			, file_ext = #{fileInfo.fileExtension}
+			</if> 
+		WHERE
+			login_id = #{loginId}
+	</update>
+	<!-- 채용담당자가 회사를 삭제하는 매퍼-->
+	<delete id="companyDelete">
+	    DELETE FROM tb_biz
+	    WHERE login_id = #{loginId}
+	</delete>
+ 
+</mapper>
